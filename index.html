@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ספר מתכונים - כניסה</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="https://www.pexels.com/photo/clear-glass-teapot-near-teacups-on-table-selective-focus-photography-219897/>🍰</text></svg>">
+</head>
+<body class="login-page">
+    <div class="container">
+        <div class="login-box">
+            <h1>🍰 ספר המתכונים שלי</h1>
+            <p id="welcomeBack" class="welcome-message"></p>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">שם מלא:</label>
+                    <input type="text" id="username" placeholder="הזן את שמך המלא..." required>
+                </div>
+                <button type="submit" class="btn btn-primary">כניסה לאתר</button>
+            </form>
+        </div>
+    </div>
+    <script src="storage.js"></script>
+    <script>
+        // וידוא שהמערכת מאותחלת
+        window.onload = () => {
+            // בדיקה אם משתמש חוזר
+            const lastUser = localStorage.getItem('lastUser');
+            if (lastUser) {
+                document.getElementById('welcomeBack').textContent = `ברוכים השובים, ${lastUser}! 👋`;
+                document.getElementById('username').value = lastUser;
+            }
+        };
+
+        
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            
+            if (!username) {
+                alert('נא להזין שם');
+                return;
+            }
+            
+            // כניסה או יצירת משתמש חדש
+            if (loginOrCreateUser(username)) {
+                localStorage.setItem('lastUser', username);
+                window.location.href = 'recipes.html';
+            }
+        });
+    </script>
+</body>
+</html>

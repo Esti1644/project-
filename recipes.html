@@ -1,0 +1,158 @@
+ש<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>רשימת מתכונים</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>">
+</head>
+<body>
+    <nav class="navbar">
+        <h2>📖 ספר המתכונים של <span id="userName"></span></h2>
+        <div>
+            <a href="settings.html" class="btn">⚙️ הגדרות</a>
+            <button onclick="logout()" class="btn btn-secondary">יציאה</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="🔍 חיפוש מתכון...">
+        </div>
+        
+        <div class="categories">
+            <button class="category-btn active" data-category="all">הכל</button>
+            <button class="category-btn" data-category="עוגות">🎂 עוגות</button>
+            <button class="category-btn" data-category="עוגיות">🍪 עוגיות</button>
+            <button class="category-btn" data-category="קינוחים">🍮 קינוחים</button>
+            <button class="category-btn" data-category="חלות ולחמניות">🍞 חלות ולחמניות</button>
+            <button class="category-btn" data-category="תוספות">🥗 תוספות</button>
+            <button class="category-btn" data-category="פטפורים">🥐 פטפורים</button>
+        </div>
+        
+        <button class="btn btn-primary add-recipe-btn" onclick="showAddRecipeForm()">➕ הוסף מתכון חדש</button>
+        
+        <div id="addRecipeForm" class="add-recipe-form" style="display:none;">
+            <h3>מתכון חדש</h3>
+            <form id="newRecipeForm">
+                <input type="text" id="recipeName" placeholder="שם המתכון" required>
+                <select id="recipeCategory" required>
+                    <option value="">בחר קטגוריה</option>
+                    <option value="עוגות">עוגות</option>
+                    <option value="עוגיות">עוגיות</option>
+                    <option value="קינוחים">קינוחים</option>
+                    <option value="חלות ולחמניות">חלות ולחמניות</option>
+                    <option value="תוספות">תוספות</option>
+                    <option value="פטפורים">פטפורים</option>
+                </select>
+                <input type="url" id="recipeImage" placeholder="קישור לתמונה" required>
+                <textarea id="recipeIngredients" placeholder="מרכיבים (כל מרכיב בשורה נפרדת)" rows="5" required></textarea>
+                <textarea id="recipeInstructions" placeholder="הוראות הכנה (כל שלב בשורה נפרדת)" rows="5" required></textarea>
+                <div>
+                    <button type="submit" class="btn btn-primary">שמור</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideAddRecipeForm()">ביטול</button>
+                </div>
+            </form>
+        </div>
+        
+        <div id="recipesList" class="recipes-grid"></div>
+    </div>
+    
+    <script src="storage.js"></script>
+    <script>
+        const user = getCurrentUser();
+        document.body.className = user.settings.theme;
+        document.getElementById('userName').textContent = user.username;
+        
+        let currentCategory = 'all';
+        let searchTerm = '';
+        
+        const displayRecipes = () => {
+            const recipes = getRecipes();
+            const filtered = recipes.filter(r => {
+                const matchCategory = currentCategory === 'all' || r.category === currentCategory;
+                const matchSearch = r.name.includes(searchTerm);
+                return matchCategory && matchSearch;
+            });
+            
+            const container = document.getElementById('recipesList');
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <h3>🔍</h3>
+                        <p>לא נמצאו מתכונים</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filtered.map((r, index) => `
+                <div class="recipe-card" style="animation: fadeIn 0.5s ease ${index * 0.1}s both;">
+                    <button class="btn-delete" onclick="event.stopPropagation(); deleteRecipe(${r.id})" title="מחק מתכון">🗑️</button>
+                    <img src="${r.image}" alt="${r.name}" loading="lazy" onclick="viewRecipe(${r.id})">
+                    <div class="recipe-info">
+                        <h3 onclick="viewRecipe(${r.id})">${r.name}</h3>
+                        <span class="category-badge">${r.category}</span>
+                    </div>
+                </div>
+            `).join('');
+        };
+        
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentCategory = btn.dataset.category;
+                displayRecipes();
+            });
+        });
+        
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            searchTerm = e.target.value;
+            displayRecipes();
+        });
+        
+        const viewRecipe = (id) => {
+            window.location.href = `recipe-view.html?id=${id}`;
+        };
+        
+        const deleteRecipe = (id) => {
+            if (confirm('האם את בטוחה שאת רוצה למחוק מתכון זה?')) {
+                removeRecipe(id);
+                displayRecipes();
+                alert('המתכון נמחק בהצלחה!');
+            }
+        };
+        
+        const showAddRecipeForm = () => {
+            document.getElementById('addRecipeForm').style.display = 'block';
+        };
+        
+        const hideAddRecipeForm = () => {
+            document.getElementById('addRecipeForm').style.display = 'none';
+            document.getElementById('newRecipeForm').reset();
+        };
+        
+        document.getElementById('newRecipeForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const recipe = {
+                name: document.getElementById('recipeName').value,
+                category: document.getElementById('recipeCategory').value,
+                image: document.getElementById('recipeImage').value,
+                ingredients: document.getElementById('recipeIngredients').value.split('\n').filter(i => i.trim()),
+                instructions: document.getElementById('recipeInstructions').value.split('\n').filter(i => i.trim())
+            };
+            
+            addRecipe(recipe);
+            hideAddRecipeForm();
+            displayRecipes();
+            alert('המתכון נוסף בהצלחה!');
+        });
+        
+        displayRecipes();
+    </script>
+</body>
+</html>

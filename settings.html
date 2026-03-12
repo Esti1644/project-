@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>הגדרות</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚙️</text></svg>">
+</head>
+<body>
+    <nav class="navbar">
+        <h2>⚙️ הגדרות</h2>
+        <div>
+            <a href="recipes.html" class="btn">חזרה למתכונים</a>
+            <button onclick="logout()" class="btn btn-secondary">יציאה</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="settings-box">
+            <h3>שלום <span id="userName"></span>!</h3>
+            <form id="settingsForm">
+                <div class="form-group">
+                    <label for="delay">זמן המתנה בין שורות (שניות):</label>
+                    <input type="range" id="delay" min="1" max="10" step="0.5">
+                    <span id="delayValue">3</span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="theme">ערכת נושא:</label>
+                    <select id="theme">
+                        <option value="light">בהיר</option>
+                        <option value="dark">כהה</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="fontSize">גודל גופן:</label>
+                    <select id="fontSize">
+                        <option value="small">קטן</option>
+                        <option value="medium">בינוני</option>
+                        <option value="large">גדול</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="backgroundMusic">
+                        מנגינת רקע בזמן הקראה
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label for="volume">עוצמת מוזיקה:</label>
+                    <input type="range" id="volume" min="0" max="1" step="0.1">
+                    <span id="volumeValue">30%</span>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">שמור הגדרות</button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="storage.js"></script>
+    <script>
+        const user = getCurrentUser();
+        const settings = user.settings;
+        
+        document.getElementById('userName').textContent = user.username;
+        
+        // טעינת הגדרות נוכחיות
+        document.getElementById('delay').value = settings.delay / 1000;
+        document.getElementById('delayValue').textContent = settings.delay / 1000;
+        document.getElementById('theme').value = settings.theme;
+        document.getElementById('fontSize').value = settings.fontSize;
+        document.getElementById('backgroundMusic').checked = settings.backgroundMusic;
+        document.getElementById('volume').value = settings.volume;
+        document.getElementById('volumeValue').textContent = Math.round(settings.volume * 100) + '%';
+        
+        // החלת ערכת נושא
+        document.body.className = settings.theme;
+        
+        // עדכון תצוגת ערכים
+        document.getElementById('delay').addEventListener('input', (e) => {
+            document.getElementById('delayValue').textContent = e.target.value;
+        });
+        
+        document.getElementById('volume').addEventListener('input', (e) => {
+            document.getElementById('volumeValue').textContent = Math.round(e.target.value * 100) + '%';
+        });
+        
+        // שמירת הגדרות
+        document.getElementById('settingsForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const newSettings = {
+                delay: parseFloat(document.getElementById('delay').value) * 1000,
+                theme: document.getElementById('theme').value,
+                fontSize: document.getElementById('fontSize').value,
+                backgroundMusic: document.getElementById('backgroundMusic').checked,
+                volume: parseFloat(document.getElementById('volume').value)
+            };
+            
+            updateUserSettings(newSettings);
+            alert('ההגדרות נשמרו בהצלחה!');
+            window.location.href = 'recipes.html';
+        });
+    </script>
+</body>
+</html>

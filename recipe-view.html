@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>תצוגת מתכון</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👨‍🍳</text></svg>">
+</head>
+<body>
+    <nav class="navbar">
+        <h2 id="recipeTitle">מתכון</h2>
+        <div>
+            <a href="recipes.html" class="btn">חזרה לרשימה</a>
+        </div>
+    </nav>
+    
+    <div class="container recipe-view">
+        <div class="recipe-header">
+            <img id="recipeImage" src="" alt="">
+            <div class="recipe-meta">
+                <h1 id="recipeName"></h1>
+                <span id="recipeCategory" class="category-badge"></span>
+            </div>
+        </div>
+        
+        <div class="recipe-content">
+            <div class="ingredients-section">
+                <h2>🥘 מרכיבים</h2>
+                <button class="btn btn-primary" onclick="readIngredients()" style="width: 100%; margin-bottom: 15px;">🔊 הקרא מרכיבים</button>
+                <ul id="ingredientsList"></ul>
+            </div>
+            
+            <div class="instructions-section">
+                <h2>👨‍🍳 אופן ההכנה</h2>
+                <button class="btn btn-primary" onclick="readInstructions()" style="width: 100%; margin-bottom: 15px;">🔊 הקרא הוראות</button>
+                <ol id="instructionsList"></ol>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="playBtn" class="btn btn-primary">▶️ התחל הקראה</button>
+            <button id="pauseBtn" class="btn btn-secondary" style="display:none;">⏸️ עצור</button>
+            <button id="resumeBtn" class="btn btn-primary" style="display:none;">▶️ המשך</button>
+            <button id="stopBtn" class="btn btn-secondary" style="display:none;">⏹️ סיים</button>
+        </div>
+    </div>
+    
+    <audio id="backgroundMusic" loop>
+        <source src="https://www.bensound.com/bensound-music/bensound-ukulele.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script src="storage.js"></script>
+    <script>
+        const user = getCurrentUser();
+        document.body.className = user.settings.theme;
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const recipeId = urlParams.get('id');
+        const recipe = getRecipeById(recipeId);
+        
+        if (!recipe) {
+            alert('מתכון לא נמצא');
+            window.location.href = 'recipes.html';
+        }
+        
+        // הצגת המתכון
+        document.getElementById('recipeTitle').textContent = recipe.name;
+        document.getElementById('recipeName').textContent = recipe.name;
+        document.getElementById('recipeCategory').textContent = recipe.category;
+        document.getElementById('recipeImage').src = recipe.image;
+        
+        const ingredientsList = document.getElementById('ingredientsList');
+        recipe.ingredients.forEach(ing => {
+            const li = document.createElement('li');
+            li.textContent = ing;
+            ingredientsList.appendChild(li);
+        });
+        
+        const instructionsList = document.getElementById('instructionsList');
+        recipe.instructions.forEach((inst, index) => {
+            const li = document.createElement('li');
+            li.textContent = inst;
+            li.id = `step-${index}`;
+            instructionsList.appendChild(li);
+        });
+        
+        // הקראה קולית
+        let currentStep = 0;
+        let isPaused = false;
+        let isReading = false;
+        const synth = window.speechSynthesis;
+        const music = document.getElementById('backgroundMusic');
+        
+        const speak = (text, callback) => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'he-IL';
+            utterance.rate = 0.9;
+            utterance.onend = callback;
+            synth.speak(utterance);
+        };
+        
+        const readIngredients = () => {
+            synth.cancel();
+            let text = 'המרכיבים של ' + recipe.name + '. ';
+            recipe.ingredients.forEach((ing, index) => {
+                text += ing + '. ';
+            });
+            speak(text);
+        };
+        
+        const readInstructions = () => {
+            synth.cancel();
+            let text = 'אופן ההכנה של ' + recipe.name + '. ';
+            recipe.instructions.forEach((inst, index) => {
+                text += 'שלב ' + (index + 1) + '. ' + inst + '. ';
+            });
+            speak(text);
+        };
+        
+        const highlightStep = (index) => {
+            document.querySelectorAll('#instructionsList li').forEach(li => li.classList.remove('active'));
+            if (index < recipe.instructions.length) {
+                document.getElementById(`step-${index}`).classList.add('active');
+            }
+        };
+        
+        const readNextStep = () => {
+            if (currentStep >= recipe.instructions.length || isPaused) {
+                return;
+            }
+            
+            highlightStep(currentStep);
+            const text = `שלב ${currentStep + 1}. ${recipe.instructions[currentStep]}`;
+            
+            speak(text, () => {
+                currentStep++;
+                if (currentStep < recipe.instructions.length && !isPaused) {
+                    setTimeout(readNextStep, user.settings.delay);
+                } else if (currentStep >= recipe.instructions.length) {
+                    stopReading();
+                    speak('בתאבון!');
+                }
+            });
+        };
+        
+        const startReading = () => {
+            if (user.settings.backgroundMusic) {
+                music.volume = user.settings.volume;
+                music.play();
+            }
+            
+            isReading = true;
+            currentStep = 0;
+            document.getElementById('playBtn').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            document.getElementById('stopBtn').style.display = 'inline-block';
+            
+            speak(`מתחילים להכין ${recipe.name}`, () => {
+                setTimeout(readNextStep, 1000);
+            });
+        };
+        
+        const pauseReading = () => {
+            isPaused = true;
+            synth.cancel();
+            music.pause();
+            document.getElementById('pauseBtn').style.display = 'none';
+            document.getElementById('resumeBtn').style.display = 'inline-block';
+        };
+        
+        const resumeReading = () => {
+            isPaused = false;
+            if (user.settings.backgroundMusic) {
+                music.play();
+            }
+            document.getElementById('resumeBtn').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            readNextStep();
+        };
+        
+        const stopReading = () => {
+            isReading = false;
+            isPaused = false;
+            currentStep = 0;
+            synth.cancel();
+            music.pause();
+            music.currentTime = 0;
+            document.querySelectorAll('#instructionsList li').forEach(li => li.classList.remove('active'));
+            document.getElementById('playBtn').style.display = 'inline-block';
+            document.getElementById('pauseBtn').style.display = 'none';
+            document.getElementById('resumeBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'none';
+        };
+        
+        document.getElementById('playBtn').addEventListener('click', startReading);
+        document.getElementById('pauseBtn').addEventListener('click', pauseReading);
+        document.getElementById('resumeBtn').addEventListener('click', resumeReading);
+        document.getElementById('stopBtn').addEventListener('click', stopReading);
+    </script>
+</body>
+</html>

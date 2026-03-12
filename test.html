@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>בדיקת מערכת</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #667eea;
+            color: white;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>🔧 בדיקת מערכת</h2>
+        <button onclick="checkStorage()">בדוק localStorage</button>
+        <button onclick="resetStorage()">אפס והתחל מחדש</button>
+        <button onclick="testLogin()">נסה התחברות</button>
+        <button onclick="goToLogin()">חזור למסך כניסה</button>
+    </div>
+    
+    <div class="box">
+        <h3>תוצאות:</h3>
+        <div id="results"></div>
+    </div>
+    
+    <script>
+        function checkStorage() {
+            const results = document.getElementById('results');
+            const users = localStorage.getItem('users');
+            const recipes = localStorage.getItem('recipes');
+            
+            results.innerHTML = `
+                <h4>משתמשים:</h4>
+                <pre>${users ? JSON.stringify(JSON.parse(users), null, 2) : 'לא קיים'}</pre>
+                <h4>מתכונים:</h4>
+                <pre>${recipes ? 'קיימים ' + JSON.parse(recipes).length + ' מתכונים' : 'לא קיים'}</pre>
+            `;
+        }
+        
+        function resetStorage() {
+            localStorage.clear();
+            
+            // יצירת משתמשים
+            const users = [
+                { 
+                    username: 'admin', 
+                    password: '1234', 
+                    settings: {
+                        delay: 3000,
+                        theme: 'light',
+                        fontSize: 'medium',
+                        backgroundMusic: true,
+                        volume: 0.3
+                    }
+                },
+                { 
+                    username: 'user1', 
+                    password: 'pass1', 
+                    settings: {
+                        delay: 3000,
+                        theme: 'light',
+                        fontSize: 'medium',
+                        backgroundMusic: true,
+                        volume: 0.3
+                    }
+                }
+            ];
+            
+            localStorage.setItem('users', JSON.stringify(users));
+            
+            document.getElementById('results').innerHTML = `
+                <p style="color: green; font-weight: bold;">✅ המערכת אופסה בהצלחה!</p>
+                <p>משתמשים זמינים:</p>
+                <ul>
+                    <li>שם משתמש: <strong>admin</strong> | סיסמה: <strong>1234</strong></li>
+                    <li>שם משתמש: <strong>user1</strong> | סיסמה: <strong>pass1</strong></li>
+                </ul>
+            `;
+        }
+        
+        function testLogin() {
+            const users = JSON.parse(localStorage.getItem('users'));
+            if (!users) {
+                document.getElementById('results').innerHTML = '<p style="color: red;">❌ אין משתמשים במערכת. לחצי על "אפס והתחל מחדש"</p>';
+                return;
+            }
+            
+            const testUser = users.find(u => u.username === 'admin' && u.password === '1234');
+            if (testUser) {
+                document.getElementById('results').innerHTML = '<p style="color: green;">✅ ההתחברות עובדת! המשתמש admin נמצא במערכת</p>';
+            } else {
+                document.getElementById('results').innerHTML = '<p style="color: red;">❌ המשתמש admin לא נמצא</p>';
+            }
+        }
+        
+        function goToLogin() {
+            window.location.href = 'index.html';
+        }
+        
+        // בדיקה אוטומטית בטעינה
+        window.onload = () => {
+            const users = localStorage.getItem('users');
+            if (!users) {
+                document.getElementById('results').innerHTML = `
+                    <p style="color: orange;">⚠️ המערכת לא מאותחלת. לחצי על "אפס והתחל מחדש"</p>
+                `;
+            } else {
+                document.getElementById('results').innerHTML = `
+                    <p style="color: green;">✅ המערכת מאותחלת</p>
+                `;
+            }
+        };
+    </script>
+</body>
+</html>
